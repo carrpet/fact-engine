@@ -1,7 +1,11 @@
 defmodule Command do
   defstruct [:command, :fact, :arity, :args]
-
 end
+
+defmodule Response do
+  defstruct [:queryResponse, :matches]
+end
+
 
 defmodule Reader do
   def len([]), do: 0
@@ -53,17 +57,19 @@ defmodule FactEngine do
       :world
 
   """
+  defstruct [:responses]
   def hello do
     :world
   end
 
   def file_transform(fname) do
     fileCmds = Reader.stream_file(fname)
-    Enum.reduce(fileCmds, %{}, &eval_facts/2)
+    factMap = Map.put_new(%{}, :responses, [])
+    Enum.reduce(fileCmds, factMap, &eval_facts/2)
   end
 
   def eval_facts(cmd, factMap) do
-    funcMap = %{"INPUT" => &input/4, "QUERY" => &query/3}
+    funcMap = %{"INPUT" => &input/4, "QUERY" => &query/4}
     %Command{command: a, fact: b, arity: c, args: d} = cmd
     funcMap[a].(b,c,d, factMap)
   end
@@ -78,32 +84,57 @@ defmodule FactEngine do
 
   end
 
-  def query(func, args, queries) do
-    :called_query
+  def query(fact, arity, args, factMap) do
+    %{^arity => subjectMap } = factMap[fact]
+    result = query_helper(args, subjectMap)
+    #result = Enum.reduce_while(args,subjects,&lookup_key/2)
+    %{responses: respList} = factMap
+    %{factMap | responses: respList ++ result}
   end
 
-  def add_fact(fact, arity, args, factMap)  do
-    Map.put_new(factMap, fact, %{arity => [args]}) 
+  def query_helper([h | []], subjectMap) do
+    result = subjectMap[h]
+    if result == nil, do: [false], else: [result]
   end
+
+  def lookup_key(key, subjectMap) do
+    if subjectMap[key] == nil, do: {:halt, false}, else: {:cont, subjectMap[key]}
+  end
+
+  def add_fact(fact, arity, args, factMap) do
+    keyToAdd = setup_dict(%{},Enum.reverse(args))
+    Map.put_new(factMap, fact, %{ arity => keyToAdd })
+  end
+
+  def setup_dict(dict,[]), do: dict
+
+  def setup_dict(dict,items) do
+    [h | t] = items
+    key = List.first(Map.keys(dict))
+    if key == nil do
+      setup_dict(Map.put_new(dict,h,true),t)
+    else
+      added = Map.put_new(dict,h,%{key => dict[key]})
+      Map.delete(added,key) 
+      setup_dict(Map.delete(added,key),t)
+    end
+  end
+
 
   def update_fact(key, arity, args, factMap) do
-    %{^arity => oldArgs} = factMap[key]
-    %{factMap | key => %{arity => oldArgs ++ [args]}}
+    %{^arity => oldDict} = factMap[key]
+    newDict = update_dict(args,oldDict)
+    %{factMap | key => %{arity => newDict}}
+  end
+
+  def update_dict([h | []], dict) do
+    Map.put_new(dict,h,true)
   end
 
 
-#  def update_value(factMap,key,args) do
-#    funcargs = parse_args(args)
-#    {arity, argsList } = funcargs
- #   if factMap[key] == nil do 
- #     Map.put_new(factMap, key, %{arity => [argsList]})
- #   else
- #     %{^arity => oldArgs} = factMap[key]
- #     %{factMap | arity => oldArgs ++ argsList }
- #   end
-  #
- # end
+  defmodule Writer do
 
+
+  end
   
-
 end
