@@ -85,7 +85,7 @@ defmodule FactEngine do
 
   def update_fact(key, arity, args, factMap) do
     %{^arity => oldArgs} = factMap[key]
-    %{factMap | arity => oldArgs ++ args }
+    %{factMap | key => %{arity => oldArgs ++ [args]}}
   end
 
 

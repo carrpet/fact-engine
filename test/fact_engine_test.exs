@@ -7,18 +7,21 @@ defmodule FactEngineTest do
     assert %{"is_a_cat" => %{1 => [["bob"]]}} = result
   end
 
-#  test "input different facts" do
-#    result = FactEngine.eval_facts("INPUT is_a_cat (bob)", %{})
-#    result = FactEngine.eval_facts("INPUT are_friends (jim,joe)", result)
-#    assert %{"is_a_cat" => a, "are_friends" => b} = result
-#  end
 
   test "multiple inputs return proper map" do
     cmd = %Command{:command => "INPUT", :fact => "is_a_cat", :arity => 1, :args => ["kcf"]}
-    cmd2 = %Command{:command => "INPUT", :fact => "is_a_cat", :arity => 1, :args => ["bob"]}
+    cmd2 = %Command{:command => "INPUT", :fact => "is_a_cat", :arity => 1, :args => ["fatty"]}
     result = FactEngine.eval_facts(cmd, %{})
     result = FactEngine.eval_facts(cmd2, result)
     assert %{"is_a_cat" => %{1 => [["kcf"],["fatty"]]}} = result
+  end
+  
+  test "input different arity facts" do
+    f1 = %Command{:command => "INPUT", :fact => "is_a_cat", :arity => 1, :args => ["johnny"]}
+    f2 = %Command{:command => "INPUT", :fact => "are_friends", :arity => 2, :args => ["sam","peter"]}
+    result = FactEngine.eval_facts(f1, %{})
+    result = FactEngine.eval_facts(f2, result)
+    assert %{"is_a_cat" => a, "are_friends" => b} = result
   end
 
  # test "query existing one argument retrieves" do
