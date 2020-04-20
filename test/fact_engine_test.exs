@@ -23,12 +23,6 @@ defmodule FactEngineTest do
     result = FactEngine.eval_facts(f2, result)
     assert %{"is_a_cat" => a, "are_friends" => b} = result
   end
-
- # test "query existing one argument retrieves" do
- #   result = FactEngine.eval_facts("INPUT is_a_cat (kcf)", %{})
- #   result = FactEngine.eval_facts("QUERY is_a_cat (kcf)", result)
- #   true = result 
-
 end
 
 defmodule ReaderTest do
@@ -37,7 +31,17 @@ defmodule ReaderTest do
 
   test "read the file" do
     result = Reader.stream_file("in.txt")
-    [a, b] = result
+    [a, _] = result
     %Command{command: "INPUT", fact: "is_a_cat", arity: 1, args: ["lucy"]} = a
+  end
+
+  test "parse line returns command one arg" do
+    result = Reader.parse_line("INPUT is_a_cat (lucy)")
+    %Command{command: "INPUT", fact: "is_a_cat", arity: 1, args: ["lucy"]} = result
+  end
+
+  test "parse line returns command multiple args" do
+    result = Reader.parse_line("QUERY are_friends (frank, sam)")
+    %Command{command: "QUERY", fact: "are_friends", arity: 2} = result
   end
 end

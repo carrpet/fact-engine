@@ -9,14 +9,17 @@ defmodule Reader do
   def len([h | t]), do: 1 + len(t)
 
   def parse_args(args) do
-    parsedArgs = String.split(args,["(",")"])
-    |> Enum.join("")
+    regExp = ~r{[[:alnum:] | [:space:] | ,]+}
+    argList = Regex.run(regExp,args)
+    [h | _ ] = argList
+    parsedArgs = h \
     |> String.split(",")
+    |> Enum.map(&String.trim/1)
     %{ :arity => len(parsedArgs), :args => parsedArgs }
   end
 
   def parse_line(line) do
-    [cmd | t] = String.split(line)
+    [cmd | t] = String.split(line, " ", parts: 3)
     [fact | [args]] = t
     argsData = parse_args(args)
     #lineData = %Command{:command => cmd, :fact => fact}
