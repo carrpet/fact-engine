@@ -7,40 +7,6 @@ defmodule Response do
 end
 
 
-defmodule Reader do
-  def len([]), do: 0
-  
-  def len([h | t]), do: 1 + len(t)
-
-  def parse_args(args) do
-    regExp = ~r{[[:alnum:] | [:space:] | ,]+}
-    argList = Regex.run(regExp,args)
-    [h | _ ] = argList
-    parsedArgs = h \
-    |> String.split(",")
-    |> Enum.map(&String.trim/1)
-    %{ :arity => len(parsedArgs), :args => parsedArgs }
-  end
-
-  def parse_line(line) do
-    [cmd | t] = String.split(line, " ", parts: 3)
-    [fact | [args]] = t
-    argsData = parse_args(args)
-    #lineData = %Command{:command => cmd, :fact => fact}
-    #%Command{lineData | argsData }
-    %Command{:command => cmd, :fact => fact, :arity => argsData[:arity], :args => argsData[:args]}
-  end
-
-  def stream_file(fname) do
-    contents = File.stream!(fname)
-    contents \
-    |> Enum.map(&parse_line/1)
-  end
-
- 
-end
-
-
 
 
 defmodule FactEngine do
@@ -62,10 +28,9 @@ defmodule FactEngine do
     :world
   end
 
-  def file_transform(fname) do
-    fileCmds = Reader.stream_file(fname)
+  def eval_file(lines) do
     factMap = Map.put_new(%{}, :responses, [])
-    Enum.reduce(fileCmds, factMap, &eval_facts/2)
+    Enum.reduce(lines, factMap, &eval_facts/2)
   end
 
   def eval_facts(cmd, factMap) do
@@ -86,19 +51,13 @@ defmodule FactEngine do
 
   def query(fact, arity, args, factMap) do
     %{^arity => subjectMap } = factMap[fact]
-    result = query_helper(args, subjectMap)
-    #result = Enum.reduce_while(args,subjects,&lookup_key/2)
+    result = Enum.reduce_while(args,subjectMap,&lookup_key/2)
     %{responses: respList} = factMap
-    %{factMap | responses: respList ++ result}
-  end
-
-  def query_helper([h | []], subjectMap) do
-    result = subjectMap[h]
-    if result == nil, do: [false], else: [result]
+    %{factMap | responses: respList ++ [result]}
   end
 
   def lookup_key(key, subjectMap) do
-    if subjectMap[key] == nil, do: {:halt, false}, else: {:cont, subjectMap[key]}
+    if subjectMap[key] == nil, do: {:halt,false}, else: {:cont, subjectMap[key]}
   end
 
   def add_fact(fact, arity, args, factMap) do

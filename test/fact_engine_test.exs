@@ -33,25 +33,32 @@ defmodule FactEngineTest do
     result = FactEngine.eval_facts(f2, result)
     assert %{responses: [true]} = result
   end
-end
 
-defmodule ReaderTest do
-  use ExUnit.Case
-  doctest Reader
-
-  test "read the file" do
-    result = Reader.stream_file("in.txt")
-    [a, _] = result
-    %Command{command: "INPUT", fact: "is_a_cat", arity: 1, args: ["lucy"]} = a
+  test "query non existing relation returns false" do
+    c1 = %Command{:command => "INPUT", :fact => "is_a_cat", :arity => 1, :args => ["peter"]}
+    c2 = %Command{:command => "QUERY", :fact => "is_a_cat", :arity => 1, :args => ["john"]}
+    factMap = Map.put_new(%{},:responses, [])
+    result = FactEngine.eval_facts(c1, factMap)
+    result = FactEngine.eval_facts(c2, result)
+    assert %{responses: [false]} = result 
   end
 
-  test "parse line returns command one arg" do
-    result = Reader.parse_line("INPUT is_a_cat (lucy)")
-    %Command{command: "INPUT", fact: "is_a_cat", arity: 1, args: ["lucy"]} = result
+  test "multiple query responses" do
+    c1 = %Command{:command => "INPUT", :fact => "are_friends", :arity => 2, :args => ["peter", "john"]}
+    c2 = %Command{:command => "QUERY", :fact => "are_friends", :arity => 2, :args => ["peter","john" ]}
+    c3 = %Command{:command => "QUERY", :fact => "are_friends", :arity => 2, :args => ["mike","tim"]}
+    c4 = %Command{:command => "QUERY", :fact => "are_friends", :arity => 2, :args => ["john","peter"]}
+    factMap = Map.put_new(%{},:responses, [])
+    result = FactEngine.eval_facts(c1, factMap)
+    result = FactEngine.eval_facts(c2, result)
+    result = FactEngine.eval_facts(c3, result)
+    result = FactEngine.eval_facts(c4, result)
+    assert %{responses: [true,false,false]} = result 
+   
   end
-
-  test "parse line returns command multiple args" do
-    result = Reader.parse_line("QUERY are_friends (frank, sam)")
-    %Command{command: "QUERY", fact: "are_friends", arity: 2} = result
-  end
+#
+#  test "query multi arity facts" do
+#  
+#  end
+#
 end
