@@ -2,12 +2,13 @@ defmodule Command do
   defstruct [:command, :fact, :arity, :args]
 end
 
+defmodule Variable do
+  defstruct [:var]
+end
+
 defmodule Response do
   defstruct [:queryResponse, :matches]
 end
-
-
-
 
 defmodule FactEngine do
   @moduledoc """

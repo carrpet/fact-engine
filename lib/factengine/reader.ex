@@ -10,6 +10,7 @@ defmodule FactEngine.Reader do
     parsedArgs = h \
     |> String.split(",")
     |> Enum.map(&String.trim/1)
+    |> Enum.map(&transform_var/1)
     %{ :arity => len(parsedArgs), :args => parsedArgs }
   end
 
@@ -27,6 +28,13 @@ defmodule FactEngine.Reader do
     |> String.split("\n", trim: true)
     |> Enum.map(&parse_line/1)
   end
+
+  def transform_var(argStr) do
+    oneCapChar = ~r/^[A-Z]{1}$/
+    result = Regex.run(oneCapChar, argStr)
+    if result == nil, do: argStr, else: %Variable{ var: List.first(result) }
+  end
+
 
  
 end
