@@ -59,18 +59,21 @@ defmodule FactEngineTest do
     assert %{responses: [%{"X" => ["kcf", "chester"]}]} = result
   end
 
+
+  ## main query processing routine tests
   test "process_arg 2 variables" do
     table = %{"lia" => %{"sam" => true, "frank" => true},
     "coo" => %{"lia" => true}, "bill" => %{"sam" => true, "john" => true}}
     
     result = Enum.map(Map.keys(table), 
     fn x -> FactEngine.process_arg(x,[%Variable{var: "X"}, %Variable{var: "Y"}], table, %{}) end)
-   
-    expected = Enum.reverse([%{%Variable{var: "X"} => "lia", %Variable{var: "Y"} => "sam"},
-     %{%Variable{var: "X"} => "lia", %Variable{var: "Y"} => "frank"},
-     %{%Variable{var: "X"} => "coo", %Variable{var: "Y"} => "lia"},
-     %{%Variable{var: "X"} => "bill", %Variable{var: "Y"} => "sam"},
-     %{%Variable{var: "X"} => "bill", %Variable{var: "Y"} => "john"}])
+    result = List.flatten(result)
+    result = FactEngine.reduce_results(result)
+    expected = Enum.reverse([%{"X" => "lia", "Y" => "sam"},
+     %{"X" => "lia", "Y" => "frank"},
+     %{"X" => "coo", "Y" => "lia"},
+     %{"X" => "bill", "Y" => "sam"},
+     %{"X" => "bill", "Y" => "john"}])
      assert expected = result
   end
 
@@ -81,6 +84,7 @@ defmodule FactEngineTest do
     result = Enum.map(Map.keys(table), 
     fn x -> FactEngine.process_arg(x,[%Variable{var: "X"}, "sam"], table, %{}) end)
     result = List.flatten(result)
+    result = FactEngine.reduce_results(result)
     assert [%{"X" => "bill"}, %{"X" => "lia"}] = result 
   end
 
@@ -90,8 +94,10 @@ defmodule FactEngineTest do
 
     result = Enum.map(Map.keys(table), 
     fn x -> FactEngine.process_arg(x,[%Variable{var: "X"}, "4", %Variable{var: "Y"}], table, %{}) end)
+
     result = List.flatten(result)
-    assert [%{"X" => "3"}, %{"Y" => "5"}] = result
+    result = FactEngine.reduce_results(result)
+    assert [%{"X" => "3", "Y" => "5"}] = result
   end
 
   test "process_arg existing values" do
@@ -101,9 +107,41 @@ defmodule FactEngineTest do
     result = Enum.map(Map.keys(table), 
     fn x -> FactEngine.process_arg(x,["coo", "lia"], table, %{}) end)
     result = List.flatten(result)
-    assert [%{"coo" => "lia"}] = result
-    
+    result = FactEngine.reduce_results(result)
+    assert result == true
+  end
 
+  test "process_arg non-existing values" do
+    table = %{"lia" => %{"sam" => true, "frank" => true, "lia" => true},
+    "coo" => %{"lia" => true}, "bill" => %{"sam" => true, "john" => true}}
+
+    result = Enum.map(Map.keys(table), 
+    fn x -> FactEngine.process_arg(x,["lia", "bill"], table, %{}) end)
+    result = List.flatten(result)
+    result = FactEngine.reduce_results(result)
+    assert result == false
+  end
+
+ # test "process_arg same vars" do
+ #   table = %{"lia" => %{"sam" => true, "frank" => true, "lia" => true},
+ #   "coo" => %{"lia" => true}, "bill" => %{"sam" => true, "john" => true}}
+#
+ #   result = Enum.map(Map.keys(table), 
+ #   fn x -> FactEngine.process_arg(x,[%Variable{var: "X"}, %Variable{var: "X"}], table, %{}) end)
+ #   result = List.flatten(result)
+ #   result = FactEngine.reduce_results(result)
+ #   assert [%{"X" => "lia"}] = result
+#
+#  end
+
+  test "reduce result with all boolean returns boolean" do
+    result = FactEngine.reduce_results([true, false, false, false])
+    assert result == true
+  end
+
+  test "reduce result, booleans and maps returns maps" do
+    result = FactEngine.reduce_results([true,%{:a => "b"}, %{:b => "c"}, false])
+    assert [%{a: "b"}, %{b: "c"}] = result
   end
 
  # test "nested variable query" do

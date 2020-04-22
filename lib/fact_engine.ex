@@ -70,12 +70,16 @@ defmodule FactEngine do
   end
   
   def process_arg(key, [h | []], table, acc) do
-    if key == h, do: acc, else: []
+    if key == h do
+      if Map.equal?(acc,%{}), do: true, else: acc 
+    else
+      false
+    end
   end
   
   def process_arg(key, [h | t], table, acc) do
     nextKeys = Map.keys(table[key])
-    if key == h, do: Enum.map(nextKeys, fn x -> process_arg(x, t,table[key],acc) end), else: []
+    if key == h, do: Enum.map(nextKeys, fn x -> process_arg(x, t,table[key],acc) end), else: false
   end
   
   def lookup_key(key, subjectMap) do
@@ -109,6 +113,19 @@ defmodule FactEngine do
 
   def update_dict([h | []], dict) do
     Map.put_new(dict,h,true)
+  end
+
+  def reduce_results(results) do
+    selectMaps = fn
+      x when not is_boolean(x) -> true
+      boolean -> false
+    end
+    mapItems = Enum.filter(results, selectMaps)
+    f = fn 
+      [] -> Enum.reduce(results, fn x, acc -> x or acc end)
+      hasMap -> mapItems
+    end
+    f.(mapItems)
   end
 
   
