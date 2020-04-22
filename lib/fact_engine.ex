@@ -52,11 +52,21 @@ defmodule FactEngine do
 
   def query(fact, arity, args, factMap) do
     %{^arity => subjectMap } = factMap[fact]
+  ## call process arg on each top level key if it's a var, passing an empty acc
     result = Enum.reduce_while(args,subjectMap,&lookup_key/2)
     %{responses: respList} = factMap
     %{factMap | responses: respList ++ [result]}
   end
 
+
+  def process_arg(key, [h | []], table, acc) do
+    Map.put_new(acc, h, key)
+  end
+  def process_arg(key, [h | t], table, acc) do
+    newAcc = Map.put_new(acc, h, key)
+    nextKeys = Map.keys(table[key])
+    Enum.map(nextKeys, fn x -> process_arg(x,t,table, newAcc) end) 
+  end
   def lookup_key(key, subjectMap) do
     if subjectMap[key] == nil, do: {:halt,false}, else: {:cont, subjectMap[key]}
   end
@@ -80,7 +90,6 @@ defmodule FactEngine do
     end
   end
 
-
   def update_fact(key, arity, args, factMap) do
     %{^arity => oldDict} = factMap[key]
     newDict = update_dict(args,oldDict)
@@ -91,10 +100,5 @@ defmodule FactEngine do
     Map.put_new(dict,h,true)
   end
 
-
-  defmodule Writer do
-
-
-  end
   
 end
