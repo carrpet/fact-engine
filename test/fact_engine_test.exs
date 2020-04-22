@@ -80,8 +80,8 @@ defmodule FactEngineTest do
     
     result = Enum.map(Map.keys(table), 
     fn x -> FactEngine.process_arg(x,[%Variable{var: "X"}, "sam"], table, %{}) end)
-
-    assert [%{%Variable{var: "X"} => "bill"}, %{%Variable{var: "X"} => "lia"}] = result 
+    result = List.flatten(result)
+    assert [%{"X" => "bill"}, %{"X" => "lia"}] = result 
   end
 
  # test "nested variable query" do
