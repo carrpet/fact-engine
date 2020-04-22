@@ -25,13 +25,12 @@ defmodule FactEngine.CLI do
     def process({input,output}) do
         input
            |> FactEngine.Reader.read_file
-           |> FactEngine.eval_file
+           |> FactEngine.eval_file(%{},[])
            |> write_responses(output)
     end
 
-    def write_responses(factMap,output) do
+    def write_responses(responses, output) do
         {:ok, file} = File.open(output, [:write])
-        %{responses: respList} = factMap 
-        Enum.each(respList, fn x -> IO.puts(file,"---"); IO.puts(file,x) end)
+        Enum.each(responses, fn x -> IO.puts(file,"---"); IO.puts(file,x) end)
     end
 end
