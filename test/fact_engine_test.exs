@@ -59,7 +59,7 @@ defmodule FactEngineTest do
     assert %{responses: [%{"X" => ["kcf", "chester"]}]} = result
   end
 
-  test "process_args 2 variables" do
+  test "process_arg 2 variables" do
     table = %{"lia" => %{"sam" => true, "frank" => true},
     "coo" => %{"lia" => true}, "bill" => %{"sam" => true, "john" => true}}
     
@@ -74,7 +74,7 @@ defmodule FactEngineTest do
      assert expected = result
   end
 
-  test "process_args 1 var and 1 existing" do
+  test "process_arg 1 var and 1 existing" do
     table = %{"lia" => %{"sam" => true, "frank" => true, "lia" => true},
     "coo" => %{"lia" => true}, "bill" => %{"sam" => true, "john" => true}}
     
@@ -82,6 +82,28 @@ defmodule FactEngineTest do
     fn x -> FactEngine.process_arg(x,[%Variable{var: "X"}, "sam"], table, %{}) end)
     result = List.flatten(result)
     assert [%{"X" => "bill"}, %{"X" => "lia"}] = result 
+  end
+
+  test "process_arg one existing value in the middle of two vars" do
+    table = %{"3" => %{"4" => %{"5" => true}, "10" => %{"6" => true}}, 
+    "5" => %{"12" => %{"13" => true}}}
+
+    result = Enum.map(Map.keys(table), 
+    fn x -> FactEngine.process_arg(x,[%Variable{var: "X"}, "4", %Variable{var: "Y"}], table, %{}) end)
+    result = List.flatten(result)
+    assert [%{"X" => "3"}, %{"Y" => "5"}] = result
+  end
+
+  test "process_arg existing values" do
+    table = %{"lia" => %{"sam" => true, "frank" => true, "lia" => true},
+    "coo" => %{"lia" => true}, "bill" => %{"sam" => true, "john" => true}}
+
+    result = Enum.map(Map.keys(table), 
+    fn x -> FactEngine.process_arg(x,["coo", "lia"], table, %{}) end)
+    result = List.flatten(result)
+    assert [%{"coo" => "lia"}] = result
+    
+
   end
 
  # test "nested variable query" do

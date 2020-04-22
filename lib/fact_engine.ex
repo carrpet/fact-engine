@@ -62,16 +62,20 @@ defmodule FactEngine do
   def process_arg(key, [%Variable{var: h} | []], table, acc) do
     Map.put_new(acc, h, key)
   end
+  
   def process_arg(key, [%Variable{var: h} | t], table, acc) do
     newAcc = Map.put_new(acc, h, key)
     nextKeys = Map.keys(table[key])
-    Enum.map(nextKeys, fn x -> process_arg(x,t,table, newAcc) end) 
+    Enum.map(nextKeys, fn x -> process_arg(x,t,table[key], newAcc) end) 
   end
+  
   def process_arg(key, [h | []], table, acc) do
     if key == h, do: acc, else: []
   end
+  
   def process_arg(key, [h | t], table, acc) do
-    if table[key] == nil, do: [], else: process_arg(table[key],t,table,acc)
+    nextKeys = Map.keys(table[key])
+    if key == h, do: Enum.map(nextKeys, fn x -> process_arg(x, t,table[key],acc) end), else: []
   end
   
   def lookup_key(key, subjectMap) do
