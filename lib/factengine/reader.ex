@@ -4,7 +4,7 @@ defmodule FactEngine.Reader do
   def len([_ | t]), do: 1 + len(t)
 
   def parse_args(args) do
-    regExp = ~r{[[:alnum:] | [:space:] | ,]+}
+    regExp = ~r{[[:alnum:] | [:space:] | , | _]+}
     argList = Regex.run(regExp, args)
     [h | _] = argList
 
@@ -34,7 +34,7 @@ defmodule FactEngine.Reader do
   end
 
   def transform_var(argStr) do
-    oneCapChar = ~r/^[A-Z]{1}$/
+    oneCapChar = ~r/^[A-Z]{1}[[:alnum:]]*$/
     result = Regex.run(oneCapChar, argStr)
     if result == nil, do: argStr, else: %Variable{var: List.first(result)}
   end
