@@ -17,6 +17,10 @@ defmodule FactEngine do
 
   def eval_file([h | []], factMap, responses) do
     {result, type} = dispatch_cmd(h, factMap)
+    IO.puts("result")
+    IO.puts(inspect(result))
+    IO.puts("responses")
+    IO.puts(inspect(responses))
     if type == :query, do: responses ++ result, else: responses
   end
 
@@ -25,7 +29,7 @@ defmodule FactEngine do
 
     if type == :input,
       do: eval_file(t, result, responses),
-      else: eval_file(t, factMap, responses ++ result)
+      else: eval_file(t, factMap, responses ++ [result])
   end
 
   def eval_input(fact, arity, args, factMap) do
@@ -43,10 +47,14 @@ defmodule FactEngine do
       %{^arity => subjectMap} = factMap[fact]
       keys = Map.keys(subjectMap)
 
-      keys
+      results = keys \
       |> Enum.map(fn x -> process_arg(x, args, subjectMap, %{}) end)
-      |> List.flatten()
-      |> reduce_results
+      IO.puts("raw_results:")
+      IO.puts(inspect(results))
+      r = reduce_results(results)
+      IO.puts("r is")
+      IO.puts(inspect(r))
+      r
     end
   end
 
@@ -139,18 +147,27 @@ defmodule FactEngine do
   end
 
   def reduce_results(results) do
+    IO.puts("Before!")
+    IO.puts(inspect(results))
+
+    results = Enum.map(results, fn x -> if is_list(x), do: List.flatten(x), else: x end)
     selectMaps = fn
-      x when not is_boolean(x) -> true
-      _ -> false
+      x when is_boolean(x) -> false
+      [false] -> false
+      [true] -> false
+      _ -> true
     end
 
+    IO.puts("r!!")
+    IO.puts(inspect(results))
     mapItems = Enum.filter(results, selectMaps)
 
     f = fn
       [] -> [Enum.reduce(results, fn x, acc -> x or acc end)]
-      _ -> Enum.reverse(mapItems)
+      _ -> Enum.reverse(List.flatten(mapItems))
     end
 
-    f.(mapItems)
+    res = f.(mapItems)
+    if res == [], do: [false], else: res
   end
 end
