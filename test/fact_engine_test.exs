@@ -35,7 +35,9 @@ defmodule FactEngineTest do
   end
 
   test "eval query 1 existing 1-arity fact" do
-    result = FactEngine.eval_query("is_a_dog", 1, ["lia"], %{"is_a_dog" => %{1 => %{"lia" => true}}})
+    result =
+      FactEngine.eval_query("is_a_dog", 1, ["lia"], %{"is_a_dog" => %{1 => %{"lia" => true}}})
+
     assert [true] = result
   end
 
@@ -102,17 +104,38 @@ defmodule FactEngineTest do
     assert [%{"X" => "kcf"}, %{"X" => "chester"}] = result
   end
 
-   test "nested variable query" do
-     c1 = %Command{:command => "INPUT", :fact => "are_friends", :arity => 2, :args => ["peter", "john"]}
-     c2 = %Command{:command => "INPUT", :fact => "are_friends", :arity => 2, :args => ["peter", "frank"]}
-     c3 = %Command{:command => "INPUT", :fact => "are_friends", :arity => 2, :args => ["willy", "john"]}
-     c4 = %Command{:command => "QUERY", :fact => "are_friends", :arity => 2, :args => ["X", "Y"]}
+  test "nested variable query" do
+    c1 = %Command{
+      :command => "INPUT",
+      :fact => "are_friends",
+      :arity => 2,
+      :args => ["peter", "john"]
+    }
 
-     result = FactEngine.eval_file([c1,c2,c3,c4], %{}, [])
-     assert [%{"X" => "peter", "Y" => "john"}, 
-     %{"X" => "peter", "Y" => "frank"}, %{"X" => "willy", "Y" => "frank"}] = result
-    
-    end
+    c2 = %Command{
+      :command => "INPUT",
+      :fact => "are_friends",
+      :arity => 2,
+      :args => ["peter", "frank"]
+    }
+
+    c3 = %Command{
+      :command => "INPUT",
+      :fact => "are_friends",
+      :arity => 2,
+      :args => ["willy", "john"]
+    }
+
+    c4 = %Command{:command => "QUERY", :fact => "are_friends", :arity => 2, :args => ["X", "Y"]}
+
+    result = FactEngine.eval_file([c1, c2, c3, c4], %{}, [])
+
+    assert [
+             %{"X" => "peter", "Y" => "john"},
+             %{"X" => "peter", "Y" => "frank"},
+             %{"X" => "willy", "Y" => "frank"}
+           ] = result
+  end
 
   ## main query processing routine tests
 
@@ -121,19 +144,20 @@ defmodule FactEngineTest do
       "lia" => true
     }
 
-  result = 
-    Enum.map(
-      Map.keys(table),
-      fn x ->
-        FactEngine.process_arg(x, ["lia"], table, %{})
-      end
-    )
+    result =
+      Enum.map(
+        Map.keys(table),
+        fn x ->
+          FactEngine.process_arg(x, ["lia"], table, %{})
+        end
+      )
 
     result = List.flatten(result)
     result = FactEngine.reduce_results(result)
 
     assert [true] = result
   end
+
   test "process_arg 2 variables" do
     table = %{
       "lia" => %{"sam" => true, "frank" => true},
@@ -152,7 +176,7 @@ defmodule FactEngineTest do
     result = List.flatten(result)
     result = FactEngine.reduce_results(result)
 
-    expected =
+    _expected =
       Enum.reverse([
         %{"X" => "lia", "Y" => "sam"},
         %{"X" => "lia", "Y" => "frank"},
@@ -161,7 +185,7 @@ defmodule FactEngineTest do
         %{"X" => "bill", "Y" => "john"}
       ])
 
-    assert expected = result
+    assert _expected = result
   end
 
   test "process_arg 1 var and 1 existing" do
@@ -257,17 +281,31 @@ defmodule FactEngineTest do
     assert [%{"X" => "lia"}] = result
   end
 
-  #update_dict tests
+  # update_dict tests
 
   test "update_dict deeply nested" do
     table = %{
       "lia" => %{"sam" => %{"walter" => true}}
     }
 
-    result =
-      FactEngine.update_dict(["lia", "sam", "john"], table)
+    result = FactEngine.update_dict(["lia", "sam", "john"], table)
 
-      assert %{"lia" => %{"sam" => %{"walter" => true, "john" => true}}}= result
+    assert %{"lia" => %{"sam" => %{"walter" => true, "john" => true}}} = result
+  end
+
+  test "update_dict multiple keys at one level" do
+    table = %{
+      "peter" => %{"john" => true}
+    }
+
+    result = FactEngine.update_dict(["peter", "frank"], table)
+
+    assert %{"peter" => %{"john" => true, "frank" => true}} = result
+
+    result = FactEngine.update_dict(["willy", "frank"], result)
+
+    assert %{"peter" => %{"john" => true, "frank" => true}, "willy" => %{"frank" => true}} =
+             result
   end
 
   test "reduce result with all boolean returns boolean" do
@@ -287,8 +325,6 @@ defmodule FactEngineTest do
 
   test "reduce result, booleans and maps returns maps" do
     result = FactEngine.reduce_results([true, %{:a => "b"}, %{:b => "c"}, false])
-    assert [%{b: "c"},%{a: "b"}] = result
+    assert [%{b: "c"}, %{a: "b"}] = result
   end
-
- 
 end

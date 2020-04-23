@@ -6,10 +6,6 @@ defmodule Variable do
   defstruct [:var]
 end
 
-defmodule Response do
-  defstruct [:queryResponse, :matches]
-end
-
 defmodule FactEngine do
   @moduledoc """
   Documentation for `FactEngine`.
@@ -30,12 +26,6 @@ defmodule FactEngine do
     :world
   end
 
-  #
-  # def eval_file(lines) do
-  #  factMap = Map.put_new(%{}, :responses, [])
-  #  Enum.reduce(lines, factMap, &eval_facts/2)
-  # end
-
   def dispatch_cmd(%Command{command: "INPUT", fact: fact, arity: arity, args: args}, factMap) do
     {FactEngine.eval_input(fact, arity, args, factMap), :input}
   end
@@ -43,7 +33,7 @@ defmodule FactEngine do
   def dispatch_cmd(%Command{command: "QUERY", fact: fact, arity: arity, args: args}, factMap) do
     {FactEngine.eval_query(fact, arity, args, factMap), :query}
   end
-   
+
   def eval_file([h | []], factMap, responses) do
     {result, type} = dispatch_cmd(h, factMap)
     if type == :query, do: responses ++ result, else: responses
@@ -75,14 +65,12 @@ defmodule FactEngine do
     |> reduce_results
   end
 
-  def process_arg(key, [%Variable{var: h} | []], table, acc) do
+  def process_arg(key, [%Variable{var: h} | []], _table, acc) do
     sameVar = fn
       %{^h => ^key} -> acc
       %{^h => _} -> []
       _ -> Map.put_new(acc, h, key)
     end
-
-    # Map.put_new(acc, h, key)
     sameVar.(acc)
   end
 
@@ -100,16 +88,10 @@ defmodule FactEngine do
         nextKeys = Map.keys(table[key])
         Enum.map(nextKeys, fn x -> process_arg(x, t, table[key], newAcc) end)
     end
-
-    # newAcc = Map.put_new(acc, h, key)
-
-    # nextKeys = Map.keys(table[key]);
-    # Enum.map(nextKeys, fn x -> process_arg(x,t,table[key], newAcc) end);
-    # end
     sameVar.(acc)
   end
 
-  def process_arg(key, [h | []], table, acc) do
+  def process_arg(key, [h | []], _table, acc) do
     if key == h do
       if Map.equal?(acc, %{}), do: true, else: acc
     else
@@ -123,10 +105,6 @@ defmodule FactEngine do
     if key == h,
       do: Enum.map(nextKeys, fn x -> process_arg(x, t, table[key], acc) end),
       else: false
-  end
-
-  def lookup_key(key, subjectMap) do
-    if subjectMap[key] == nil, do: {:halt, false}, else: {:cont, subjectMap[key]}
   end
 
   def add_fact(fact, arity, args, factMap) do
@@ -159,32 +137,27 @@ defmodule FactEngine do
     Map.put_new(dict, h, true)
   end
 
-  def update_dict(args, table) do
-    [h | t] = args
-    if table[h] != nil, do: %{h => update_dict(t, table[h])}, else: setup_dict(table, Enum.reverse(args))
-    #update_d(dict[h], t,dict) 
+  def update_dict([h | t], table) do
+    if table[h] != nil,
+      do: %{h => update_dict(t, table[h])},
+      else: Map.put_new(table, h, setup_dict(%{}, t))
   end
 
-  def update_d(nil, args, dict) do
-    setup_dict(dict, Enum.reverse(args))
-  end
-
-  def update_d(inmap, args, dict) do
-    [h | t] = args
-    if Enum.member?(Map.keys(inmap), h), do: update_d(inmap[h],t,dict) ,else: setup_dict(inmap, args)
+  def update_dict(args, nil) do
+    setup_dict(%{}, Enum.reverse(args))
   end
 
   def reduce_results(results) do
     selectMaps = fn
       x when not is_boolean(x) -> true
-      boolean -> false
+      _ -> false
     end
 
     mapItems = Enum.filter(results, selectMaps)
 
     f = fn
       [] -> [Enum.reduce(results, fn x, acc -> x or acc end)]
-      hasMap -> Enum.reverse(mapItems)
+      _ -> Enum.reverse(mapItems)
     end
 
     f.(mapItems)
