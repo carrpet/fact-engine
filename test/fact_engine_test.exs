@@ -2,6 +2,8 @@ defmodule FactEngineTest do
   use ExUnit.Case
   doctest FactEngine
 
+  # eval_input tests
+
   test "input new fact creates correct map representation" do
     result = FactEngine.eval_input("is_a_cat", 1, ["bob"], %{})
     assert %{"is_a_cat" => %{1 => %{"bob" => true}}} = result
@@ -34,12 +36,33 @@ defmodule FactEngineTest do
            } = r2
   end
 
+  # eval_query tests
+
   test "eval query 1 existing 1-arity fact" do
     result =
       FactEngine.eval_query("is_a_dog", 1, ["lia"], %{"is_a_dog" => %{1 => %{"lia" => true}}})
 
     assert [true] = result
   end
+
+  test "eval query 2 variable fact" do
+    table = %{
+      "are_friends" => %{
+        2 => %{"peter" => %{"john" => true, "frank" => true}, "willy" => %{"frank" => true}}
+      }
+    }
+
+    result =
+      FactEngine.eval_query("are_friends", 2, [%Variable{var: "X"}, %Variable{var: "Y"}], table)
+
+    assert [
+             %{"X" => "peter", "Y" => "john"},
+             %{"X" => "peter", "Y" => "frank"},
+             %{"X" => "willy", "Y" => "frank"}
+           ] = result
+  end
+
+  # eval_file tests
 
   test "query existing 1-rity function arg returns true" do
     c1 = %Command{:command => "INPUT", :fact => "is_a_cat", :arity => 1, :args => ["peter"]}
@@ -126,7 +149,12 @@ defmodule FactEngineTest do
       :args => ["willy", "john"]
     }
 
-    c4 = %Command{:command => "QUERY", :fact => "are_friends", :arity => 2, :args => ["X", "Y"]}
+    c4 = %Command{
+      :command => "QUERY",
+      :fact => "are_friends",
+      :arity => 2,
+      :args => [%Variable{var: "X"}, %Variable{var: "Y"}]
+    }
 
     result = FactEngine.eval_file([c1, c2, c3, c4], %{}, [])
 
@@ -137,7 +165,7 @@ defmodule FactEngineTest do
            ] = result
   end
 
-  ## main query processing routine tests
+  ## process_arg tests
 
   test "process_arg 1 existing" do
     table = %{
@@ -307,6 +335,8 @@ defmodule FactEngineTest do
     assert %{"peter" => %{"john" => true, "frank" => true}, "willy" => %{"frank" => true}} =
              result
   end
+
+  # reduce_result tests
 
   test "reduce result with all boolean returns boolean" do
     result = FactEngine.reduce_results([true, false, false, false])

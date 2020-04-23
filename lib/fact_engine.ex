@@ -71,6 +71,7 @@ defmodule FactEngine do
       %{^h => _} -> []
       _ -> Map.put_new(acc, h, key)
     end
+
     sameVar.(acc)
   end
 
@@ -88,6 +89,7 @@ defmodule FactEngine do
         nextKeys = Map.keys(table[key])
         Enum.map(nextKeys, fn x -> process_arg(x, t, table[key], newAcc) end)
     end
+
     sameVar.(acc)
   end
 
@@ -130,7 +132,7 @@ defmodule FactEngine do
   def update_fact(key, arity, args, factMap) do
     %{^arity => oldDict} = factMap[key]
     newDict = update_dict(args, oldDict)
-    %{factMap | key => %{arity => newDict}}
+    Map.replace!(factMap, key, %{arity => newDict})
   end
 
   def update_dict([h | []], dict) do
