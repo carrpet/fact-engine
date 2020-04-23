@@ -34,6 +34,11 @@ defmodule FactEngineTest do
            } = r2
   end
 
+  test "eval query 1 existing 1-arity fact" do
+    result = FactEngine.eval_query("is_a_dog", 1, ["lia"], %{"is_a_dog" => %{1 => %{"lia" => true}}})
+    assert [true] = result
+  end
+
   test "query existing 1-rity function arg returns true" do
     c1 = %Command{:command => "INPUT", :fact => "is_a_cat", :arity => 1, :args => ["peter"]}
     c2 = %Command{:command => "QUERY", :fact => "is_a_cat", :arity => 1, :args => ["peter"]}
@@ -98,6 +103,25 @@ defmodule FactEngineTest do
   end
 
   ## main query processing routine tests
+
+  test "process_arg 1 existing" do
+    table = %{
+      "lia" => true
+    }
+
+  result = 
+    Enum.map(
+      Map.keys(table),
+      fn x ->
+        FactEngine.process_arg(x, ["lia"], table, %{})
+      end
+    )
+
+    result = List.flatten(result)
+    result = FactEngine.reduce_results(result)
+
+    assert [true] = result
+  end
   test "process_arg 2 variables" do
     table = %{
       "lia" => %{"sam" => true, "frank" => true},
@@ -143,7 +167,7 @@ defmodule FactEngineTest do
 
     result = List.flatten(result)
     result = FactEngine.reduce_results(result)
-    assert [%{"X" => "bill"}, %{"X" => "lia"}] = result
+    assert [%{"X" => "lia"}, %{"X" => "bill"}] = result
   end
 
   test "process_arg one existing value in the middle of two vars" do
@@ -223,12 +247,22 @@ defmodule FactEngineTest do
 
   test "reduce result with all boolean returns boolean" do
     result = FactEngine.reduce_results([true, false, false, false])
-    assert result == [true]
+    assert [true] = result
+  end
+
+  test "reduce result with all false booleans" do
+    result = FactEngine.reduce_results([false, false, false, false])
+    assert [false] = result
+  end
+
+  test "reduce result with a boolean" do
+    result = FactEngine.reduce_results([true])
+    assert [true] = result
   end
 
   test "reduce result, booleans and maps returns maps" do
     result = FactEngine.reduce_results([true, %{:a => "b"}, %{:b => "c"}, false])
-    assert [%{a: "b"}, %{b: "c"}] = result
+    assert [%{b: "c"},%{a: "b"}] = result
   end
 
   # test "nested variable query" do

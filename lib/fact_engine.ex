@@ -67,10 +67,10 @@ defmodule FactEngine do
 
   def eval_query(fact, arity, args, factMap) do
     %{^arity => subjectMap} = factMap[fact]
-    keys = Map.keys(factMap)
+    keys = Map.keys(subjectMap)
 
     keys
-    |> Enum.map(fn x -> process_arg(x, args, factMap, %{}) end)
+    |> Enum.map(fn x -> process_arg(x, args, subjectMap, %{}) end)
     |> List.flatten()
     |> reduce_results
   end
@@ -169,7 +169,7 @@ defmodule FactEngine do
 
     f = fn
       [] -> [Enum.reduce(results, fn x, acc -> x or acc end)]
-      hasMap -> mapItems
+      hasMap -> Enum.reverse(mapItems)
     end
 
     f.(mapItems)
