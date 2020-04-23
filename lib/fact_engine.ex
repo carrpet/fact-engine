@@ -159,6 +159,21 @@ defmodule FactEngine do
     Map.put_new(dict, h, true)
   end
 
+  def update_dict(args, table) do
+    [h | t] = args
+    if table[h] != nil, do: %{h => update_dict(t, table[h])}, else: setup_dict(table, Enum.reverse(args))
+    #update_d(dict[h], t,dict) 
+  end
+
+  def update_d(nil, args, dict) do
+    setup_dict(dict, Enum.reverse(args))
+  end
+
+  def update_d(inmap, args, dict) do
+    [h | t] = args
+    if Enum.member?(Map.keys(inmap), h), do: update_d(inmap[h],t,dict) ,else: setup_dict(inmap, args)
+  end
+
   def reduce_results(results) do
     selectMaps = fn
       x when not is_boolean(x) -> true

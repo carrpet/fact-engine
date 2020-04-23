@@ -102,6 +102,18 @@ defmodule FactEngineTest do
     assert [%{"X" => "kcf"}, %{"X" => "chester"}] = result
   end
 
+   test "nested variable query" do
+     c1 = %Command{:command => "INPUT", :fact => "are_friends", :arity => 2, :args => ["peter", "john"]}
+     c2 = %Command{:command => "INPUT", :fact => "are_friends", :arity => 2, :args => ["peter", "frank"]}
+     c3 = %Command{:command => "INPUT", :fact => "are_friends", :arity => 2, :args => ["willy", "john"]}
+     c4 = %Command{:command => "QUERY", :fact => "are_friends", :arity => 2, :args => ["X", "Y"]}
+
+     result = FactEngine.eval_file([c1,c2,c3,c4], %{}, [])
+     assert [%{"X" => "peter", "Y" => "john"}, 
+     %{"X" => "peter", "Y" => "frank"}, %{"X" => "willy", "Y" => "frank"}] = result
+    
+    end
+
   ## main query processing routine tests
 
   test "process_arg 1 existing" do
@@ -245,6 +257,19 @@ defmodule FactEngineTest do
     assert [%{"X" => "lia"}] = result
   end
 
+  #update_dict tests
+
+  test "update_dict deeply nested" do
+    table = %{
+      "lia" => %{"sam" => %{"walter" => true}}
+    }
+
+    result =
+      FactEngine.update_dict(["lia", "sam", "john"], table)
+
+      assert %{"lia" => %{"sam" => %{"walter" => true, "john" => true}}}= result
+  end
+
   test "reduce result with all boolean returns boolean" do
     result = FactEngine.reduce_results([true, false, false, false])
     assert [true] = result
@@ -265,14 +290,5 @@ defmodule FactEngineTest do
     assert [%{b: "c"},%{a: "b"}] = result
   end
 
-  # test "nested variable query" do
-  #   c1 = %Command{:command => "INPUT", :fact => "are_friends", :arity => 2, :args => ["peter", "john"]}
-  #   c2 = %Command{:command => "INPUT", :fact => "are_friends", :arity => 2, :args => ["peter", "frank"]}
-  #   c3 = %Command{:command => "INPUT", :fact => "are_friends", :arity => 2, :args => ["willy", "john"]}
-  #   c4 = %Command{:command => "QUERY", :fact => "are_friends", :arity => 2, :args => ["X", "Y"]}
-  #   factMap = Map.put_new(%{},:responses, [])
-  #   result = Enum.reduce([c1,c2,c3,c4], factMap, &FactEngine.eval_facts/2)
-  #   assert %{responses: [%{"X" => ["kcf", "chester"]}]} = result
-
-  # end
+ 
 end
