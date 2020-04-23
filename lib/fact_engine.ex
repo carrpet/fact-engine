@@ -7,25 +7,6 @@ defmodule Variable do
 end
 
 defmodule FactEngine do
-  @moduledoc """
-  Documentation for `FactEngine`.
-  """
-
-  @doc """
-  Hello world.
-
-  ## Examples
-
-      iex> FactEngine.hello()
-      :world
-
-  """
-  defstruct [:responses]
-
-  def hello do
-    :world
-  end
-
   def dispatch_cmd(%Command{command: "INPUT", fact: fact, arity: arity, args: args}, factMap) do
     {FactEngine.eval_input(fact, arity, args, factMap), :input}
   end
@@ -56,13 +37,17 @@ defmodule FactEngine do
   end
 
   def eval_query(fact, arity, args, factMap) do
-    %{^arity => subjectMap} = factMap[fact]
-    keys = Map.keys(subjectMap)
+    if factMap[fact] == nil do
+      [false]
+    else
+      %{^arity => subjectMap} = factMap[fact]
+      keys = Map.keys(subjectMap)
 
-    keys
-    |> Enum.map(fn x -> process_arg(x, args, subjectMap, %{}) end)
-    |> List.flatten()
-    |> reduce_results
+      keys
+      |> Enum.map(fn x -> process_arg(x, args, subjectMap, %{}) end)
+      |> List.flatten()
+      |> reduce_results
+    end
   end
 
   def process_arg(key, [%Variable{var: h} | []], _table, acc) do
@@ -147,6 +132,10 @@ defmodule FactEngine do
 
   def update_dict(args, nil) do
     setup_dict(%{}, Enum.reverse(args))
+  end
+
+  def reduce_results([]) do
+    [false]
   end
 
   def reduce_results(results) do

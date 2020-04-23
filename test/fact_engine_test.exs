@@ -38,14 +38,14 @@ defmodule FactEngineTest do
 
   # eval_query tests
 
-  test "eval query 1 existing 1-arity fact" do
+  test "eval_query 1 existing 1-arity fact" do
     result =
       FactEngine.eval_query("is_a_dog", 1, ["lia"], %{"is_a_dog" => %{1 => %{"lia" => true}}})
 
     assert [true] = result
   end
 
-  test "eval query 2 variable fact" do
+  test "eval_query 2 variable fact" do
     table = %{
       "are_friends" => %{
         2 => %{"peter" => %{"john" => true, "frank" => true}, "willy" => %{"frank" => true}}
@@ -56,10 +56,35 @@ defmodule FactEngineTest do
       FactEngine.eval_query("are_friends", 2, [%Variable{var: "X"}, %Variable{var: "Y"}], table)
 
     assert [
+             %{"X" => "willy", "Y" => "frank"},
              %{"X" => "peter", "Y" => "john"},
-             %{"X" => "peter", "Y" => "frank"},
-             %{"X" => "willy", "Y" => "frank"}
+             %{"X" => "peter", "Y" => "frank"}
            ] = result
+  end
+
+  test "eval_query not existing var" do
+    result = FactEngine.eval_query("is_a_cat", 1, [%Variable{var: "X"}], %{})
+
+    assert [false] = result
+  end
+
+  test "eval_query 2 same vars and one different no matches" do
+    table = %{
+      "triple" => %{
+        3 => %{4 => %{5 => true}},
+        5 => %{12 => %{13 => true}}
+      }
+    }
+
+    result =
+      FactEngine.eval_query(
+        "triple",
+        3,
+        [%Variable{var: "X"}, %Variable{var: "X"}, %Variable{var: "Y"}],
+        table
+      )
+
+    assert [false] = result
   end
 
   # eval_file tests
@@ -159,9 +184,9 @@ defmodule FactEngineTest do
     result = FactEngine.eval_file([c1, c2, c3, c4], %{}, [])
 
     assert [
+             %{"X" => "willy", "Y" => "john"},
              %{"X" => "peter", "Y" => "john"},
-             %{"X" => "peter", "Y" => "frank"},
-             %{"X" => "willy", "Y" => "frank"}
+             %{"X" => "peter", "Y" => "frank"}
            ] = result
   end
 
@@ -356,5 +381,10 @@ defmodule FactEngineTest do
   test "reduce result, booleans and maps returns maps" do
     result = FactEngine.reduce_results([true, %{:a => "b"}, %{:b => "c"}, false])
     assert [%{b: "c"}, %{a: "b"}] = result
+  end
+
+  test "reduce empty results" do
+    result = FactEngine.reduce_results([])
+    assert [false] = result
   end
 end
