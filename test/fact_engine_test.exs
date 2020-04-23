@@ -133,7 +133,7 @@ defmodule FactEngineTest do
     }
 
     result = FactEngine.eval_file([c1, c2, c3, c4], %{}, [])
-    assert [true, false, false] = result
+    assert [[true], [false], false] = result
   end
 
   test "variable 1-arity fact query" do

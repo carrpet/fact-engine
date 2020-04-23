@@ -32,8 +32,7 @@ defmodule FactEngine.CLI do
 
   def write_responses(responses, output) do
     {:ok, file} = File.open(output, [:write])
-    IO.puts("responses array!")
-    IO.puts(inspect(responses))
+
     Enum.each(responses, fn x ->
       IO.puts(file, "---")
       IO.puts(file, inspect(x))
