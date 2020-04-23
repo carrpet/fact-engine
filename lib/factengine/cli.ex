@@ -35,7 +35,21 @@ defmodule FactEngine.CLI do
 
     Enum.each(responses, fn x ->
       IO.puts(file, "---")
-      IO.puts(file, inspect(x))
+      format_response(x, file)
     end)
+  end
+
+  def format_response(response, output) when is_list(response) do
+    Enum.each(response, fn x -> format_response(x, output) end)
+  end
+
+  def format_response(response, output) when is_map(response) do
+    keys = Map.keys(response)
+    Enum.each(keys, fn x -> IO.write(output, [x, ":  ", response[x], "  "]) end)
+    IO.puts(output, "")
+  end
+
+  def format_response(response, output) do
+    IO.puts(output, inspect(response))
   end
 end
